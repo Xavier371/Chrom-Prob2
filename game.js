@@ -1,28 +1,129 @@
-function aiMove() {
-    // First priority: Capture any white piece if possible
+const boardSize = 8;
+let board = [];
+let currentPlayer = 'white';
+
+function initializeBoard() {
+    board = Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
+    
+    // Place black pieces in row 1
+    for (let i = 0; i < boardSize; i++) {
+        board[1][i] = 'black';
+    }
+    
+    // Place white pieces in second-to-last row
+    for (let i = 0; i < boardSize; i++) {
+        board[boardSize - 2][i] = 'white';
+    }
+    
+    currentPlayer = 'white';
+    renderBoard();
+}
+
+function renderBoard() {
+    const gameBoard = document.getElementById('game-board');
+    gameBoard.innerHTML = '';
+    
+    for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+            const cell = document.createElement('div');
+            
+            if (board[row][col]) {
+                const triangle = document.createElement('div');
+                triangle.className = 'triangle ' + board[row][col];
+                
+                // Only white pieces can be dragged by the player
+                if (board[row][col] === 'white') {
+                    triangle.draggable = true;
+                    triangle.ondragstart = (e) => dragStart(e, row, col);
+                }
+                
+                cell.appendChild(triangle);
+            }
+            
+            cell.ondragover = (e) => e.preventDefault();
+            cell.ondrop = (e) => drop(e, row, col);
+            
+            gameBoard.appendChild(cell);
+        }
+    }
+}
+
+function dragStart(event, row, col) {
+    if (currentPlayer === 'white' && board[row][col] === 'white') {
+        event.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
+    }
+}
+
+function drop(event, newRow, newCol) {
+    // Only process if it's white's turn
+    if (currentPlayer !== 'white') return;
+    
+    const { row, col } = JSON.parse(event.dataTransfer.getData('text/plain'));
+    
+    if (isValidMove(row, col, newRow, newCol)) {
+        // Move the piece
+        board[newRow][newCol] = 'white';
+        board[row][col] = null;
+        
+        // Check win condition
+        if (newRow === 0) {
+            renderBoard();
+            setTimeout(() => {
+                alert('White wins!');
+                initializeBoard();
+            }, 100);
+            return;
+        }
+        
+        // Switch to black's turn and render
+        currentPlayer = 'black';
+        renderBoard();
+        
+        // AI moves after a short delay
+        setTimeout(makeBlackMove, 100);
+    }
+}
+
+function isValidMove(row, col, newRow, newCol) {
+    // Check if destination has a piece of the same color
+    if (board[newRow][newCol] === board[row][col]) {
+        return false;
+    }
+    
+    // Check if move is one square horizontally or vertically
+    const rowDiff = Math.abs(newRow - row);
+    const colDiff = Math.abs(newCol - col);
+    
+    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+}
+
+function makeBlackMove() {
+    // 1. Try to capture any adjacent white piece
     for (let row = 0; row < boardSize; row++) {
         for (let col = 0; col < boardSize; col++) {
             if (board[row][col] === 'black') {
+                // Check the four adjacent squares for white pieces
                 const directions = [
                     { r: 1, c: 0 },  // Down
                     { r: 0, c: -1 }, // Left
-                    { r: 0, c: 1 }   // Right
+                    { r: 0, c: 1 },  // Right
+                    { r: -1, c: 0 }  // Up
                 ];
                 
-                // Look for capturing moves
-                for (const { r, c } of directions) {
-                    const newRow = row + r;
-                    const newCol = col + c;
+                for (const dir of directions) {
+                    const newRow = row + dir.r;
+                    const newCol = col + dir.c;
                     
+                    // Check if square is valid and has a white piece
                     if (newRow >= 0 && newRow < boardSize && 
                         newCol >= 0 && newCol < boardSize && 
                         board[newRow][newCol] === 'white') {
                         
-                        // Make the capture move
+                        // Capture the white piece
                         board[newRow][newCol] = 'black';
                         board[row][col] = null;
                         
-                        // Check win condition
+                        // Check if black won
                         if (newRow === boardSize - 1) {
                             renderBoard();
                             setTimeout(() => {
@@ -32,6 +133,7 @@ function aiMove() {
                             return;
                         }
                         
+                        // End black's turn
                         currentPlayer = 'white';
                         renderBoard();
                         return;
@@ -41,33 +143,38 @@ function aiMove() {
         }
     }
     
-    // Second priority: Move towards goal while avoiding moves that put piece in capture range
+    // 2. Try to move towards the goal while avoiding putting pieces in capture range
     let bestMove = null;
     let bestScore = -Infinity;
     
     for (let row = 0; row < boardSize; row++) {
         for (let col = 0; col < boardSize; col++) {
             if (board[row][col] === 'black') {
+                // Check possible moves: down, left, right (not up)
                 const directions = [
                     { r: 1, c: 0 },  // Down
                     { r: 0, c: -1 }, // Left
                     { r: 0, c: 1 }   // Right
                 ];
                 
-                for (const { r, c } of directions) {
-                    const newRow = row + r;
-                    const newCol = col + c;
+                for (const dir of directions) {
+                    const newRow = row + dir.r;
+                    const newCol = col + dir.c;
                     
+                    // Check if move is valid
                     if (newRow >= 0 && newRow < boardSize && 
                         newCol >= 0 && newCol < boardSize && 
                         board[newRow][newCol] === null) {
                         
-                        // Calculate score - prefer moving down
-                        let score = newRow * 10; // Higher score for moves closer to bottom
+                        // Calculate score for this move
+                        let score = 0;
                         
-                        // Check if move would place piece in capture range of white
-                        if (!wouldBeInCaptureRange(newRow, newCol)) {
-                            score += 50; // Strongly prefer safe moves
+                        // Prefer moving toward the goal
+                        score += newRow * 10;
+                        
+                        // Avoid putting piece in capture range
+                        if (!isInCaptureRange(newRow, newCol)) {
+                            score += 50;
                         }
                         
                         if (score > bestScore) {
@@ -80,12 +187,12 @@ function aiMove() {
         }
     }
     
-    // Make the best move if found
+    // Make the best move if one was found
     if (bestMove) {
         board[bestMove.toRow][bestMove.toCol] = 'black';
         board[bestMove.fromRow][bestMove.fromCol] = null;
         
-        // Check win condition
+        // Check if black won
         if (bestMove.toRow === boardSize - 1) {
             renderBoard();
             setTimeout(() => {
@@ -95,12 +202,13 @@ function aiMove() {
             return;
         }
         
+        // End black's turn
         currentPlayer = 'white';
         renderBoard();
         return;
     }
     
-    // Last resort: Make any valid move
+    // 3. If no good move was found, make any valid move
     for (let row = 0; row < boardSize; row++) {
         for (let col = 0; col < boardSize; col++) {
             if (board[row][col] === 'black') {
@@ -110,9 +218,9 @@ function aiMove() {
                     { r: 0, c: 1 }   // Right
                 ];
                 
-                for (const { r, c } of directions) {
-                    const newRow = row + r;
-                    const newCol = col + c;
+                for (const dir of directions) {
+                    const newRow = row + dir.r;
+                    const newCol = col + dir.c;
                     
                     if (newRow >= 0 && newRow < boardSize && 
                         newCol >= 0 && newCol < boardSize && 
@@ -121,7 +229,7 @@ function aiMove() {
                         board[newRow][newCol] = 'black';
                         board[row][col] = null;
                         
-                        // Check win condition
+                        // Check if black won
                         if (newRow === boardSize - 1) {
                             renderBoard();
                             setTimeout(() => {
@@ -131,6 +239,7 @@ function aiMove() {
                             return;
                         }
                         
+                        // End black's turn
                         currentPlayer = 'white';
                         renderBoard();
                         return;
@@ -141,25 +250,28 @@ function aiMove() {
     }
 }
 
-// Check if a position would be in capture range of any white piece
-function wouldBeInCaptureRange(row, col) {
+function isInCaptureRange(row, col) {
+    // Check if any white piece could capture a piece at this position
     const directions = [
-        { r: -1, c: 0 }, // Up
         { r: 1, c: 0 },  // Down
         { r: 0, c: -1 }, // Left
-        { r: 0, c: 1 }   // Right
+        { r: 0, c: 1 },  // Right
+        { r: -1, c: 0 }  // Up
     ];
     
-    for (const { r, c } of directions) {
-        const adjacentRow = row + r;
-        const adjacentCol = col + c;
+    for (const dir of directions) {
+        const adjRow = row + dir.r;
+        const adjCol = col + dir.c;
         
-        if (adjacentRow >= 0 && adjacentRow < boardSize && 
-            adjacentCol >= 0 && adjacentCol < boardSize && 
-            board[adjacentRow][adjacentCol] === 'white') {
+        if (adjRow >= 0 && adjRow < boardSize && 
+            adjCol >= 0 && adjCol < boardSize && 
+            board[adjRow][adjCol] === 'white') {
             return true;
         }
     }
     
     return false;
 }
+
+// Initialize the game when the page loads
+window.onload = initializeBoard;
