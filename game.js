@@ -54,9 +54,22 @@ function drop(event, newRow, newCol) {
 }
 
 function isValidMove(row, col, newRow, newCol) {
-    if (board[newRow][newCol] !== null) return false;
+    const targetPiece = board[newRow][newCol];
+    
+    // Prevent moving to a square occupied by the same player's piece
+    if (targetPiece === currentPlayer) {
+        return false;
+    }
+    
+    // Capture opponent's piece
+    if (targetPiece !== null && targetPiece !== currentPlayer) {
+        board[newRow][newCol] = null; // Capture the piece
+    }
+    
     const rowDiff = Math.abs(newRow - row);
     const colDiff = Math.abs(newCol - col);
+    
+    // Allow one square vertical or horizontal movement
     return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
 }
 
