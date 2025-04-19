@@ -1,38 +1,45 @@
-     body {
-         font-family: Arial, sans-serif;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         height: 100vh;
-         margin: 0;
-         background-color: #f0f0f0;
-     }
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
 
-     #game-board {
-         display: grid;
-         grid-template-columns: repeat(8, 50px);
-         grid-template-rows: repeat(8, 50px);
-         gap: 5px;
-     }
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    gap: 2px;
+    margin: 20px 0;
+}
 
-     #game-board div {
-         width: 50px;
-         height: 50px;
-         background-color: white;
-         border: 1px solid #ccc;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         font-size: 24px;
-     }
+#game-board div {
+    width: 60px;
+    height: 60px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
 
-     .pawn {
-         background-color: #000;
-         color: #fff;
-         border-radius: 50%;
-     }
+.triangle {
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    cursor: pointer;
+}
 
-     .pawn.white {
-         background-color: #fff;
-         color: #000;
-     }
+.triangle.white {
+    border-bottom: 40px solid #fff;
+}
+
+.triangle.black {
+    border-top: 40px solid #000;
+}
