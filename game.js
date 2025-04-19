@@ -25,92 +25,135 @@ function renderBoard() {
     const gameBoard = document.getElementById('game-board');
     gameBoard.innerHTML = '';
     
-    // Add checker pattern
-    let isLight = true;
-    
     for (let row = 0; row < boardSize; row++) {
-        isLight = row % 2 === 0;
-        
         for (let col = 0; col < boardSize; col++) {
             const cell = document.createElement('div');
-            
-            // Set data attributes for position
             cell.setAttribute('data-row', row);
             cell.setAttribute('data-col', col);
             
-            // Alternate cell colors
-            if (isLight) {
-                cell.style.backgroundColor = '#fff';
-            } else {
-                cell.style.backgroundColor = '#e0e0e0';
+            if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+                cell.classList.add('selected');
             }
-            isLight = !isLight;
             
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
+                
+                // Only white pieces can be dragged by the player
+                if (board[row][col] === 'white') {
+                    triangle.draggable = true;
+                    triangle.ondragstart = (e) => dragStart(e, row, col);
+                    
+                    // Add touch event for mobile
+                    triangle.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        handleTouchStart(row, col);
+                    }, { passive: false });
+                }
+                
                 cell.appendChild(triangle);
             }
             
-            // Add click event for tap controls
-            cell.addEventListener('click', () => handleCellClick(row, col));
+            // Add touch event for mobile
+            cell.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const touchRow = parseInt(cell.getAttribute('data-row'));
+                const touchCol = parseInt(cell.getAttribute('data-col'));
+                handleTouchEnd(touchRow, touchCol);
+            }, { passive: false });
+            
+            // Regular drag and drop
+            cell.ondragover = (e) => e.preventDefault();
+            cell.ondrop = (e) => drop(e, row, col);
             
             gameBoard.appendChild(cell);
         }
     }
-    
-    // Highlight selected piece if any
-    if (selectedPiece) {
-        const cell = document.querySelector(`[data-row="${selectedPiece.row}"][data-col="${selectedPiece.col}"]`);
-        if (cell) cell.classList.add('selected');
+}
+
+function handleTouchStart(row, col) {
+    if (currentPlayer === 'white' && board[row][col] === 'white') {
+        selectedPiece = { row, col };
+        renderBoard();
     }
 }
 
-function handleCellClick(row, col) {
-    // If it's white's turn
-    if (currentPlayer === 'white') {
-        // If no piece is selected and this cell has a white piece, select it
-        if (selectedPiece === null && board[row][col] === 'white') {
-            selectedPiece = { row, col };
-            renderBoard(); // To show selection
-        } 
-        // If a piece is already selected, try to move it to this cell
-        else if (selectedPiece !== null) {
-            // Check if this is a valid move
-            if (isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
-                // Move the piece
-                board[row][col] = 'white';
-                board[selectedPiece.row][selectedPiece.col] = null;
-                
-                // Check win condition
-                if (row === 0) {
-                    renderBoard();
-                    setTimeout(() => {
-                        alert('White wins!');
-                        initializeBoard();
-                    }, 100);
-                    return;
-                }
-                
-                // Switch to black's turn and render
-                currentPlayer = 'black';
+function handleTouchEnd(row, col) {
+    if (selectedPiece !== null) {
+        // Try to move to the touched cell
+        if (isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
+            // Move the piece
+            board[row][col] = 'white';
+            board[selectedPiece.row][selectedPiece.col] = null;
+            
+            // Check win condition
+            if (row === 0) {
+                renderBoard();
+                setTimeout(() => {
+                    alert('White wins!');
+                    initializeBoard();
+                }, 100);
+                return;
+            }
+            
+            // Switch to black's turn and render
+            currentPlayer = 'black';
+            selectedPiece = null;
+            renderBoard();
+            
+            // AI moves after a short delay
+            setTimeout(makeBlackMove, 100);
+        } else {
+            // If the touch was on another white piece, select that instead
+            if (board[row][col] === 'white') {
+                selectedPiece = { row, col };
+                renderBoard();
+            } else {
+                // Invalid move, deselect
                 selectedPiece = null;
                 renderBoard();
-                
-                // AI moves after a short delay
-                setTimeout(makeBlackMove, 300);
-            } else {
-                // If clicking on another white piece, select that instead
-                if (board[row][col] === 'white') {
-                    selectedPiece = { row, col };
-                    renderBoard(); // To show new selection
-                } else {
-                    // Invalid move, deselect
-                    selectedPiece = null;
-                    renderBoard();
-                }
             }
         }
+    } else if (board[row][col] === 'white') {
+        // If no piece was selected and a white piece was tapped
+        selectedPiece = { row, col };
+        renderBoard();
+    }
+}
+
+function dragStart(event, row, col) {
+    if (currentPlayer === 'white' && board[row][col] === 'white') {
+        event.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
+    }
+}
+
+function drop(event, newRow, newCol) {
+    // Only process if it's white's turn
+    if (currentPlayer !== 'white') return;
+    
+    const { row, col } = JSON.parse(event.dataTransfer.getData('text/plain'));
+    
+    if (isValidMove(row, col, newRow, newCol)) {
+        // Move the piece
+        board[newRow][newCol] = 'white';
+        board[row][col] = null;
+        
+        // Check win condition
+        if (newRow === 0) {
+            renderBoard();
+            setTimeout(() => {
+                alert('White wins!');
+                initializeBoard();
+            }, 100);
+            return;
+        }
+        
+        // Switch to black's turn and render
+        currentPlayer = 'black';
+        renderBoard();
+        
+        // AI moves after a short delay
+        setTimeout(makeBlackMove, 100);
     }
 }
 
