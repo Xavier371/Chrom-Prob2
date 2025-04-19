@@ -42,16 +42,16 @@ function drop(event, newRow, newCol) {
     if (isValidMove(row, col, newRow, newCol)) {
         board[newRow][newCol] = board[row][col]; // Keep the piece color
         board[row][col] = null;
+        renderBoard();
         if ((currentPlayer === 'white' && newRow === 0) || (currentPlayer === 'black' && newRow === boardSize - 1)) {
             alert(currentPlayer + ' wins!');
             initializeBoard();
         } else {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             if (currentPlayer === 'black') {
-                aiMove();
+                setTimeout(aiMove, 500); // Delay for AI move
             }
         }
-        renderBoard();
     }
 }
 
@@ -90,10 +90,12 @@ function aiMove() {
                     if (isValidMove(row, col, newRow, newCol)) {
                         board[newRow][newCol] = 'black';
                         board[row][col] = null;
+                        renderBoard();
                         if (newRow === boardSize - 1) {
                             alert('black wins!');
                             initializeBoard();
                         }
+                        currentPlayer = 'white'; // Switch back to user
                         return;
                     }
                 }
