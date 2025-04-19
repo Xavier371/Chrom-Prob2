@@ -6,8 +6,8 @@ let gameMode = 'single';
 function initializeBoard() {
     board = Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
     for (let i = 0; i < boardSize; i++) {
-        board[1][i] = 'white';
-        board[boardSize - 2][i] = 'black';
+        board[1][i] = 'black';
+        board[boardSize - 2][i] = 'white';
     }
     renderBoard();
 }
@@ -62,7 +62,6 @@ function isValidMove(row, col, newRow, newCol) {
 }
 
 function aiMove() {
-    // Simple AI: move the first available piece
     for (let row = 0; row < boardSize; row++) {
         for (let col = 0; col < boardSize; col++) {
             if (board[row][col] === 'black') {
