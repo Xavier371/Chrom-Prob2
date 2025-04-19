@@ -1,7 +1,7 @@
 const boardSize = 8;
 let board = [];
 let currentPlayer = 'white';
-let selectedCell = null;
+let selectedPiece = null;
 
 function initializeBoard() {
     board = Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
@@ -17,7 +17,9 @@ function initializeBoard() {
     }
     
     currentPlayer = 'white';
+    selectedPiece = null;
     renderBoard();
+    updateGameStatus();
 }
 
 function renderBoard() {
@@ -30,86 +32,124 @@ function renderBoard() {
             cell.dataset.row = row;
             cell.dataset.col = col;
             
+            // Apply checkerboard pattern
+            if ((row + col) % 2 === 0) {
+                cell.style.backgroundColor = '#e0e0e0';
+            }
+            
+            // Highlight selected piece
+            if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+                cell.classList.add('selected');
+            }
+            
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
                 
-                // Only white pieces can be moved by the player
-                if (board[row][col] === 'white') {
-                    // For both desktop and mobile
-                    cell.addEventListener('click', () => cellClick(row, col));
+                // For desktop: drag and drop
+                if (board[row][col] === 'white' && !isMobileDevice()) {
+                    triangle.draggable = true;
+                    triangle.ondragstart = (e) => dragStart(e, row, col);
                 }
                 
                 cell.appendChild(triangle);
-            } else {
-                // Empty cells also need click handlers for move destination
-                cell.addEventListener('click', () => cellClick(row, col));
             }
+            
+            // Add click handler for mobile and desktop
+            cell.addEventListener('click', () => cellClick(row, col));
+            
+            // Add drop handler for desktop
+            cell.ondragover = (e) => e.preventDefault();
+            cell.ondrop = (e) => drop(e, row, col);
             
             gameBoard.appendChild(cell);
         }
     }
 }
 
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+}
+
 function cellClick(row, col) {
-    // If it's not white's turn, do nothing
+    // Only process if it's white's turn
     if (currentPlayer !== 'white') return;
     
-    // If a cell with a white piece is clicked, select it
-    if (board[row][col] === 'white' && !selectedCell) {
-        selectedCell = { row, col };
-        highlightCell(row, col, true);
+    // If clicking on a white piece, select it
+    if (board[row][col] === 'white') {
+        // If already selected, deselect it
+        if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+            selectedPiece = null;
+            renderBoard();
+            return;
+        }
+        
+        // Select the piece
+        selectedPiece = { row, col };
+        renderBoard();
         return;
     }
     
-    // If a cell is already selected, try to move to the clicked cell
-    if (selectedCell) {
-        // Unhighlight the previously selected cell
-        highlightCell(selectedCell.row, selectedCell.col, false);
-        
-        // If this is a valid move, make it
-        if (isValidMove(selectedCell.row, selectedCell.col, row, col)) {
-            // Move the piece
-            board[row][col] = 'white';
-            board[selectedCell.row][selectedCell.col] = null;
-            
-            // Check win condition
-            if (row === 0) {
-                renderBoard();
-                setTimeout(() => {
-                    alert('White wins!');
-                    initializeBoard();
-                }, 100);
-                return;
-            }
-            
-            // Switch to black's turn and render
-            currentPlayer = 'black';
-            selectedCell = null;
-            renderBoard();
-            
-            // AI moves after a short delay
-            setTimeout(makeBlackMove, 100);
-        } else if (board[row][col] === 'white') {
-            // If another white piece is clicked, select it instead
-            selectedCell = { row, col };
-            highlightCell(row, col, true);
-        } else {
-            // If an invalid move is attempted, clear selection
-            selectedCell = null;
+    // If a piece is selected and we click on a valid destination, move it
+    if (selectedPiece) {
+        if (isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
+            moveWhitePiece(selectedPiece.row, selectedPiece.col, row, col);
         }
     }
 }
 
-function highlightCell(row, col, highlight) {
-    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-    if (cell) {
-        if (highlight) {
-            cell.style.backgroundColor = '#ffeb3b';
-        } else {
-            cell.style.backgroundColor = '';
-        }
+function dragStart(event, row, col) {
+    if (currentPlayer === 'white' && board[row][col] === 'white') {
+        event.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
+        // Visually indicate the dragged piece
+        selectedPiece = { row, col };
+        setTimeout(() => renderBoard(), 0); // Needed for Firefox
     }
+}
+
+function drop(event, newRow, newCol) {
+    // Only process if it's white's turn
+    if (currentPlayer !== 'white') return;
+    
+    try {
+        const { row, col } = JSON.parse(event.dataTransfer.getData('text/plain'));
+        
+        if (isValidMove(row, col, newRow, newCol)) {
+            moveWhitePiece(row, col, newRow, newCol);
+        }
+    } catch (error) {
+        console.error("Error in drop handler:", error);
+    }
+    
+    // Clear selection
+    selectedPiece = null;
+    renderBoard();
+}
+
+function moveWhitePiece(fromRow, fromCol, toRow, toCol) {
+    // Move the piece
+    board[toRow][toCol] = 'white';
+    board[fromRow][fromCol] = null;
+    
+    // Check win condition
+    if (toRow === 0) {
+        renderBoard();
+        setTimeout(() => {
+            alert('White wins!');
+            initializeBoard();
+        }, 100);
+        return;
+    }
+    
+    // Switch to black's turn and render
+    currentPlayer = 'black';
+    selectedPiece = null;
+    renderBoard();
+    updateGameStatus();
+    
+    // AI moves after a short delay
+    setTimeout(makeBlackMove, 500);
 }
 
 function isValidMove(row, col, newRow, newCol) {
@@ -164,6 +204,7 @@ function makeBlackMove() {
                         // End black's turn
                         currentPlayer = 'white';
                         renderBoard();
+                        updateGameStatus();
                         return;
                     }
                 }
@@ -205,6 +246,9 @@ function makeBlackMove() {
                             score += 50;
                         }
                         
+                        // Add slight randomness to prevent predictable play
+                        score += Math.random() * 5;
+                        
                         if (score > bestScore) {
                             bestScore = score;
                             bestMove = { fromRow: row, fromCol: col, toRow: newRow, toCol: newCol };
@@ -233,6 +277,7 @@ function makeBlackMove() {
         // End black's turn
         currentPlayer = 'white';
         renderBoard();
+        updateGameStatus();
         return;
     }
     
@@ -270,6 +315,7 @@ function makeBlackMove() {
                         // End black's turn
                         currentPlayer = 'white';
                         renderBoard();
+                        updateGameStatus();
                         return;
                     }
                 }
@@ -301,15 +347,36 @@ function isInCaptureRange(row, col) {
     return false;
 }
 
-// Add instructions toggle functionality
-document.getElementById('instructions-btn').addEventListener('click', function() {
-    const instructions = document.getElementById('instructions');
-    if (instructions.classList.contains('hidden')) {
-        instructions.classList.remove('hidden');
-        this.textContent = 'Hide Instructions';
-    } else {
-        instructions.classList.add('hidden');
-        this.textContent = 'Show Instructions';
+function updateGameStatus() {
+    // If the status element exists, update it
+    const status = document.getElementById('game-status');
+    if (status) {
+        status.textContent = `Current turn: ${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}`;
+    }
+}
+
+// Add restart button functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const restartBtn = document.getElementById('restart-btn');
+    if (restartBtn) {
+        restartBtn.addEventListener('click', initializeBoard);
+    }
+    
+    // Add instructions toggle functionality
+    const instructionsBtn = document.getElementById('instructions-btn');
+    if (instructionsBtn) {
+        instructionsBtn.addEventListener('click', function() {
+            const instructions = document.getElementById('instructions');
+            if (instructions) {
+                if (instructions.classList.contains('hidden')) {
+                    instructions.classList.remove('hidden');
+                    this.textContent = 'Hide Instructions';
+                } else {
+                    instructions.classList.add('hidden');
+                    this.textContent = 'Show Instructions';
+                }
+            }
+        });
     }
 });
 
