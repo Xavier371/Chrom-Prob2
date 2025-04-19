@@ -3,12 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Triangle Chess Game</title>
+    <title>TriPath</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Triangle Chess Game</h1>
+    <h1>TriPath</h1>
+    <button id="instructions-button">Instructions</button>
     <div id="game-board"></div>
+    <div id="instructions-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>How to Play TriPath</h2>
+            <p>TriPath is a strategic board game where you control the white triangles.</p>
+            <ul>
+                <li>Move your triangles one space horizontally or vertically by dragging them.</li>
+                <li>Capture opponent's pieces by moving onto their space.</li>
+                <li>The first player to reach the opposite side of the board wins!</li>
+            </ul>
+        </div>
+    </div>
     <script src="game.js"></script>
 </body>
 </html>
