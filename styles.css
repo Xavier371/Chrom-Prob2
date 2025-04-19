@@ -8,16 +8,16 @@ body {
     margin: 0;
     padding: 10px;
     background-color: #f0f0f0;
-    touch-action: manipulation;
+    box-sizing: border-box;
 }
 
 h1 {
     margin-bottom: 10px;
 }
 
-#instructions-button {
-    margin-bottom: 20px;
-    padding: 8px 16px;
+#instructions-btn {
+    margin-bottom: 15px;
+    padding: 8px 15px;
     background-color: #4CAF50;
     color: white;
     border: none;
@@ -25,95 +25,74 @@ h1 {
     cursor: pointer;
 }
 
-#instructions-button:hover {
-    background-color: #45a049;
+#instructions {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-width: 500px;
+    width: 90%;
+}
+
+#instructions p {
+    margin: 5px 0;
+}
+
+.hidden {
+    display: none;
 }
 
 #game-board {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
     gap: 2px;
-    max-width: 100%;
-    aspect-ratio: 1 / 1;
+    margin: 10px 0;
     border: 2px solid #333;
 }
 
+/* Add responsive scaling for mobile */
+@media (max-width: 480px) {
+    #game-board {
+        grid-template-columns: repeat(8, 36px);
+        grid-template-rows: repeat(8, 36px);
+    }
+    
+    #game-board div {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .triangle {
+        width: 16px;
+        height: 16px;
+    }
+}
+
 #game-board div {
+    width: 60px;
+    height: 60px;
     background-color: #fff;
     border: 1px solid #ccc;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
-    aspect-ratio: 1 / 1;
 }
 
 .triangle {
-    width: 40%;
-    height: 40%;
-    background-size: contain;
+    width: 20px;
+    height: 20px;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
-    background-position: center;
     cursor: pointer;
 }
 
 .triangle.white {
-    background-image: url('white.png');
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 15 15"><polygon points="7.5,0 15,15 0,15" fill="white" stroke="black" stroke-width="1"/></svg>');
 }
 
 .triangle.black {
-    background-image: url('black.png');
-}
-
-/* Modal styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 500px;
-    border-radius: 5px;
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close:hover {
-    color: black;
-}
-
-/* Responsive design for mobile */
-@media (max-width: 600px) {
-    h1 {
-        font-size: 1.5rem;
-    }
-    
-    #game-board {
-        width: 95vw;
-        height: 95vw;
-    }
-    
-    .modal-content {
-        margin: 20% auto;
-        width: 90%;
-    }
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 15 15"><polygon points="7.5,0 15,15 0,15" fill="black" stroke="gray" stroke-width="1"/></svg>');
 }
