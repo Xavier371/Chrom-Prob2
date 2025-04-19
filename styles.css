@@ -7,7 +7,6 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #f0f0f0;
-    touch-action: manipulation;
 }
 
 h1 {
@@ -31,7 +30,6 @@ h1 {
     border: 1px solid #ccc;
     border-radius: 4px;
     max-width: 500px;
-    width: 90%;
 }
 
 #instructions p {
@@ -62,8 +60,8 @@ h1 {
     position: relative;
 }
 
-/* Alternating row colors for checkerboard pattern */
-#game-board div:nth-child(even) {
+/* Alternating colors for checkerboard */
+#game-board div:nth-child(odd) {
     background-color: #e0e0e0;
 }
 
@@ -82,12 +80,13 @@ h1 {
     background-image: url('black.png');
 }
 
-.selected {
-    background-color: #ffeb3b !important;
-}
-
 /* Mobile styles */
 @media (max-width: 480px) {
+    body {
+        height: auto;
+        padding: 10px 0;
+    }
+    
     #game-board {
         grid-template-columns: repeat(8, 40px);
         grid-template-rows: repeat(8, 40px);
@@ -99,20 +98,7 @@ h1 {
     }
     
     .triangle {
-        width: 10px;
-        height: 10px;
-    }
-}
-
-/* For very small screens */
-@media (max-width: 360px) {
-    #game-board {
-        grid-template-columns: repeat(8, 36px);
-        grid-template-rows: repeat(8, 36px);
-    }
-    
-    #game-board div {
-        width: 36px;
-        height: 36px;
+        width: 12px;
+        height: 12px;
     }
 }
