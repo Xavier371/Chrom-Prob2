@@ -27,6 +27,11 @@ function renderBoard() {
         for (let col = 0; col < boardSize; col++) {
             const cell = document.createElement('div');
             
+            // Add checkerboard pattern
+            if ((row + col) % 2 === 0) {
+                cell.style.backgroundColor = '#e0e0e0';
+            }
+            
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
@@ -35,43 +40,16 @@ function renderBoard() {
                 if (board[row][col] === 'white') {
                     triangle.draggable = true;
                     triangle.ondragstart = (e) => dragStart(e, row, col);
-                    // Add touch support
-                    triangle.ontouchstart = (e) => touchStart(e, row, col);
                 }
                 
                 cell.appendChild(triangle);
             }
             
-            // Add drag-and-drop and touch event listeners
             cell.ondragover = (e) => e.preventDefault();
             cell.ondrop = (e) => drop(e, row, col);
-            cell.ontouchend = (e) => touchEnd(e, row, col);
             
             gameBoard.appendChild(cell);
         }
-    }
-}
-
-// Variables to store touch data
-let touchStartRow, touchStartCol;
-
-function touchStart(event, row, col) {
-    // Only allow white pieces to be moved on white's turn
-    if (currentPlayer === 'white' && board[row][col] === 'white') {
-        touchStartRow = row;
-        touchStartCol = col;
-        event.preventDefault(); // Prevent scrolling
-    }
-}
-
-function touchEnd(event, newRow, newCol) {
-    // Only process if touch started on a valid piece
-    if (touchStartRow !== undefined && touchStartCol !== undefined) {
-        if (currentPlayer === 'white' && board[touchStartRow][touchStartCol] === 'white') {
-            makeMove(touchStartRow, touchStartCol, newRow, newCol);
-        }
-        touchStartRow = undefined;
-        touchStartCol = undefined;
     }
 }
 
@@ -85,14 +63,8 @@ function drop(event, newRow, newCol) {
     // Only process if it's white's turn
     if (currentPlayer !== 'white') return;
     
-    const data = event.dataTransfer.getData('text/plain');
-    if (!data) return;
+    const { row, col } = JSON.parse(event.dataTransfer.getData('text/plain'));
     
-    const { row, col } = JSON.parse(data);
-    makeMove(row, col, newRow, newCol);
-}
-
-function makeMove(row, col, newRow, newCol) {
     if (isValidMove(row, col, newRow, newCol)) {
         // Move the piece
         board[newRow][newCol] = 'white';
@@ -306,32 +278,17 @@ function isInCaptureRange(row, col) {
     return false;
 }
 
-// Modal functionality
-function setupModal() {
-    const modal = document.getElementById('instructions-modal');
-    const btn = document.getElementById('instructions-button');
-    const span = document.getElementsByClassName('close')[0];
-    
-    // Open modal when button is clicked
-    btn.onclick = function() {
-        modal.style.display = 'block';
-    };
-    
-    // Close modal when "×" is clicked
-    span.onclick = function() {
-        modal.style.display = 'none';
-    };
-    
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
-}
+// Add instructions toggle functionality
+document.getElementById('instructions-btn').addEventListener('click', function() {
+    const instructions = document.getElementById('instructions');
+    if (instructions.classList.contains('hidden')) {
+        instructions.classList.remove('hidden');
+        this.textContent = 'Hide Instructions';
+    } else {
+        instructions.classList.add('hidden');
+        this.textContent = 'Show Instructions';
+    }
+});
 
 // Initialize the game when the page loads
-window.onload = function() {
-    initializeBoard();
-    setupModal();
-};
+window.onload = initializeBoard;
