@@ -30,8 +30,8 @@ body {
 }
 
 .triangle {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30;
     background-size: cover;
     cursor: pointer;
 }
