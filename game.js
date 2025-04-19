@@ -20,8 +20,10 @@ function renderBoard() {
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
-                triangle.draggable = true;
-                triangle.ondragstart = (e) => dragStart(e, row, col);
+                if (board[row][col] === 'white') {
+                    triangle.draggable = true;
+                    triangle.ondragstart = (e) => dragStart(e, row, col);
+                }
                 cell.appendChild(triangle);
             }
             cell.ondragover = (e) => e.preventDefault();
@@ -38,7 +40,7 @@ function dragStart(event, row, col) {
 function drop(event, newRow, newCol) {
     const { row, col } = JSON.parse(event.dataTransfer.getData('text/plain'));
     if (isValidMove(row, col, newRow, newCol)) {
-        board[newRow][newCol] = currentPlayer;
+        board[newRow][newCol] = board[row][col]; // Keep the piece color
         board[row][col] = null;
         if ((currentPlayer === 'white' && newRow === 0) || (currentPlayer === 'black' && newRow === boardSize - 1)) {
             alert(currentPlayer + ' wins!');
