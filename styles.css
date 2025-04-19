@@ -6,7 +6,9 @@ body {
     justify-content: center;
     height: 100vh;
     margin: 0;
+    padding: 0;
     background-color: #f0f0f0;
+    box-sizing: border-box;
 }
 
 h1 {
@@ -30,6 +32,7 @@ h1 {
     border: 1px solid #ccc;
     border-radius: 4px;
     max-width: 500px;
+    width: 90%;
 }
 
 #instructions p {
@@ -61,16 +64,61 @@ h1 {
 }
 
 .triangle {
-    width: 10px;
-    height: 10px;
+    width: 30px;
+    height: 30px;
     background-size: cover;
+    background-position: center;
     cursor: pointer;
 }
 
 .triangle.white {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" fill="white" stroke="black" stroke-width="1"/></svg>');
+    background-image: url('white.png');
 }
 
 .triangle.black {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" fill="black" stroke="gray" stroke-width="1"/></svg>');
+    background-image: url('black.png');
+}
+
+/* Checkerboard pattern */
+#game-board div:nth-child(odd) {
+    background-color: #e0e0e0;
+}
+#game-board div:nth-child(even) {
+    background-color: #fff;
+}
+
+/* Mobile styles */
+@media (max-width: 600px) {
+    body {
+        height: auto;
+        padding: 20px 0;
+    }
+    
+    #game-board {
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+    }
+    
+    #game-board div {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .triangle {
+        width: 20px;
+        height: 20px;
+    }
+    
+    /* For very small screens */
+    @media (max-width: 360px) {
+        #game-board {
+            grid-template-columns: repeat(8, 35px);
+            grid-template-rows: repeat(8, 35px);
+        }
+        
+        #game-board div {
+            width: 35px;
+            height: 35px;
+        }
+    }
 }
