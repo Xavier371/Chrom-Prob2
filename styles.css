@@ -30,17 +30,16 @@ body {
 }
 
 .triangle {
-    width: 0;
-    height: 0;
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
+    width: 40px;
+    height: 40px;
+    background-size: cover;
     cursor: pointer;
 }
 
 .triangle.white {
-    border-bottom: 40px solid #fff;
+    background-image: url('white.png');
 }
 
 .triangle.black {
-    border-top: 40px solid #000;
+    background-image: url('black.png');
 }
