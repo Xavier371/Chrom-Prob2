@@ -1,7 +1,6 @@
 const boardSize = 8;
 let board = [];
 let currentPlayer = 'white';
-let gameMode = 'single';
 
 function initializeBoard() {
     board = Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
@@ -41,12 +40,12 @@ function drop(event, newRow, newCol) {
     if (isValidMove(row, col, newRow, newCol)) {
         board[newRow][newCol] = currentPlayer;
         board[row][col] = null;
-        if (newRow === 0 || newRow === boardSize - 1) {
+        if ((currentPlayer === 'white' && newRow === 0) || (currentPlayer === 'black' && newRow === boardSize - 1)) {
             alert(currentPlayer + ' wins!');
             initializeBoard();
         } else {
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            if (gameMode === 'single' && currentPlayer === 'black') {
+            if (currentPlayer === 'black') {
                 aiMove();
             }
         }
@@ -66,7 +65,6 @@ function aiMove() {
         for (let col = 0; col < boardSize; col++) {
             if (board[row][col] === 'black') {
                 const directions = [
-                    { r: -1, c: 0 },
                     { r: 1, c: 0 },
                     { r: 0, c: -1 },
                     { r: 0, c: 1 }
@@ -77,7 +75,7 @@ function aiMove() {
                     if (isValidMove(row, col, newRow, newCol)) {
                         board[newRow][newCol] = 'black';
                         board[row][col] = null;
-                        if (newRow === 0) {
+                        if (newRow === boardSize - 1) {
                             alert('black wins!');
                             initializeBoard();
                         }
@@ -87,12 +85,6 @@ function aiMove() {
             }
         }
     }
-}
-
-function startGame(mode) {
-    gameMode = mode;
-    currentPlayer = 'white';
-    initializeBoard();
 }
 
 window.onload = initializeBoard;
