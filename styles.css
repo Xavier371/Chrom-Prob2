@@ -15,6 +15,7 @@ body {
     grid-template-rows: repeat(8, 60px);
     gap: 2px;
     margin: 20px 0;
+    border: 2px solid #333;
 }
 
 #game-board div {
