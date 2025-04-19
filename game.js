@@ -27,11 +27,6 @@ function renderBoard() {
         for (let col = 0; col < boardSize; col++) {
             const cell = document.createElement('div');
             
-            // Add checkerboard pattern
-            if ((row + col) % 2 === 0) {
-                cell.style.backgroundColor = '#e0e0e0';
-            }
-            
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
