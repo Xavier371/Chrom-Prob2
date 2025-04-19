@@ -1,28 +1,21 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 body {
     font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-    padding: 10px;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
     background-color: #f0f0f0;
     touch-action: manipulation;
 }
 
 h1 {
-    margin: 10px 0;
-    font-size: 24px;
+    margin-bottom: 10px;
 }
 
 #instructions-btn {
-    margin: 5px 0 10px 0;
+    margin-bottom: 15px;
     padding: 8px 15px;
     background-color: #4CAF50;
     color: white;
@@ -32,14 +25,13 @@ h1 {
 }
 
 #instructions {
-    margin-bottom: 10px;
-    padding: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
     background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
     max-width: 500px;
     width: 90%;
-    font-size: 14px;
 }
 
 #instructions p {
@@ -55,7 +47,7 @@ h1 {
     grid-template-columns: repeat(8, 60px);
     grid-template-rows: repeat(8, 60px);
     gap: 2px;
-    margin: 10px 0;
+    margin: 20px 0;
     border: 2px solid #333;
 }
 
@@ -70,11 +62,15 @@ h1 {
     position: relative;
 }
 
+/* Alternating row colors for checkerboard pattern */
+#game-board div:nth-child(even) {
+    background-color: #e0e0e0;
+}
+
 .triangle {
-    width: 30px;
-    height: 30px;
+    width: 15px;
+    height: 15px;
     background-size: cover;
-    background-position: center;
     cursor: pointer;
 }
 
@@ -86,26 +82,30 @@ h1 {
     background-image: url('black.png');
 }
 
-/* Cell selection highlight */
 .selected {
     background-color: #ffeb3b !important;
 }
 
-/* Checkerboard pattern */
-#game-board div:nth-child(odd) {
-    background-color: #e0e0e0;
-}
-#game-board div:nth-child(even) {
-    background-color: #fff;
-}
-
 /* Mobile styles */
 @media (max-width: 480px) {
-    h1 {
-        font-size: 20px;
-        margin: 5px 0;
+    #game-board {
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
     }
     
+    #game-board div {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .triangle {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 360px) {
     #game-board {
         grid-template-columns: repeat(8, 36px);
         grid-template-rows: repeat(8, 36px);
@@ -114,28 +114,5 @@ h1 {
     #game-board div {
         width: 36px;
         height: 36px;
-    }
-    
-    .triangle {
-        width: 20px;
-        height: 20px;
-    }
-}
-
-/* For very small screens */
-@media (max-width: 360px) {
-    #game-board {
-        grid-template-columns: repeat(8, 32px);
-        grid-template-rows: repeat(8, 32px);
-    }
-    
-    #game-board div {
-        width: 32px;
-        height: 32px;
-    }
-    
-    .triangle {
-        width: 18px;
-        height: 18px;
     }
 }
