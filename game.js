@@ -23,9 +23,22 @@ function renderBoard() {
     const gameBoard = document.getElementById('game-board');
     gameBoard.innerHTML = '';
     
+    // Add checker pattern
+    let isLight = true;
+    
     for (let row = 0; row < boardSize; row++) {
+        isLight = row % 2 === 0;
+        
         for (let col = 0; col < boardSize; col++) {
             const cell = document.createElement('div');
+            
+            // Alternate cell colors
+            if (isLight) {
+                cell.style.backgroundColor = '#fff';
+            } else {
+                cell.style.backgroundColor = '#e0e0e0';
+            }
+            isLight = !isLight;
             
             if (board[row][col]) {
                 const triangle = document.createElement('div');
@@ -35,16 +48,64 @@ function renderBoard() {
                 if (board[row][col] === 'white') {
                     triangle.draggable = true;
                     triangle.ondragstart = (e) => dragStart(e, row, col);
+                    
+                    // Add touch support for mobile
+                    triangle.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        // Store the starting position
+                        window.touchStartPos = { row, col };
+                    }, { passive: false });
                 }
                 
                 cell.appendChild(triangle);
             }
             
+            // Mouse/desktop events
             cell.ondragover = (e) => e.preventDefault();
             cell.ondrop = (e) => drop(e, row, col);
             
+            // Touch/mobile events
+            cell.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (window.touchStartPos) {
+                    handleTouchMove(row, col);
+                }
+            }, { passive: false });
+            
             gameBoard.appendChild(cell);
         }
+    }
+}
+
+function handleTouchMove(newRow, newCol) {
+    if (currentPlayer === 'white' && window.touchStartPos) {
+        const { row, col } = window.touchStartPos;
+        
+        if (isValidMove(row, col, newRow, newCol)) {
+            // Move the piece
+            board[newRow][newCol] = 'white';
+            board[row][col] = null;
+            
+            // Check win condition
+            if (newRow === 0) {
+                renderBoard();
+                setTimeout(() => {
+                    alert('White wins!');
+                    initializeBoard();
+                }, 100);
+                return;
+            }
+            
+            // Switch to black's turn and render
+            currentPlayer = 'black';
+            renderBoard();
+            
+            // AI moves after a short delay
+            setTimeout(makeBlackMove, 300);
+        }
+        
+        // Clear the stored position
+        window.touchStartPos = null;
     }
 }
 
@@ -80,7 +141,7 @@ function drop(event, newRow, newCol) {
         renderBoard();
         
         // AI moves after a short delay
-        setTimeout(makeBlackMove, 100);
+        setTimeout(makeBlackMove, 300);
     }
 }
 
