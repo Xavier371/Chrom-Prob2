@@ -32,11 +32,6 @@ function renderBoard() {
             cell.dataset.row = row;
             cell.dataset.col = col;
             
-            // Apply checkerboard pattern
-            if ((row + col) % 2 === 0) {
-                cell.style.backgroundColor = '#e0e0e0';
-            }
-            
             // Highlight selected piece
             if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
                 cell.classList.add('selected');
