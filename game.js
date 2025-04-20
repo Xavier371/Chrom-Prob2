@@ -42,7 +42,7 @@ function renderBoard() {
                 triangle.className = 'triangle ' + board[row][col];
                 
                 // For desktop: drag and drop
-                if (board[row][col] === 'white' && !isMobileDevice()) {
+                if (board[row][col] === 'white') {
                     triangle.draggable = true;
                     triangle.ondragstart = (e) => dragStart(e, row, col);
                 }
@@ -120,6 +120,119 @@ function drop(event, newRow, newCol) {
     // Clear selection
     selectedPiece = null;
     renderBoard();
+}
+
+// Mobile touch handling
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartRow = null;
+let touchStartCol = null;
+let touchMovedElement = null;
+
+function initTouchEvents() {
+    const gameBoard = document.getElementById('game-board');
+    gameBoard.addEventListener('touchstart', handleTouchStart, { passive: false });
+    gameBoard.addEventListener('touchmove', handleTouchMove, { passive: false });
+    gameBoard.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+function handleTouchStart(event) {
+    if (currentPlayer !== 'white') return;
+    
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    
+    let target = touch.target;
+    // Find if we're touching a triangle
+    while (target && !target.classList.contains('triangle')) {
+        if (target === document.body) return;
+        target = target.parentElement;
+    }
+    
+    // Only proceed if we touched a white triangle
+    if (target && target.classList.contains('triangle') && target.classList.contains('white')) {
+        // Get cell coordinates
+        const cell = target.parentElement;
+        touchStartRow = parseInt(cell.dataset.row);
+        touchStartCol = parseInt(cell.dataset.col);
+        
+        // Create a clone for dragging
+        touchMovedElement = target.cloneNode(true);
+        touchMovedElement.style.position = 'fixed';
+        touchMovedElement.style.left = (touchStartX - 20) + 'px';
+        touchMovedElement.style.top = (touchStartY - 20) + 'px';
+        touchMovedElement.style.zIndex = '1000';
+        touchMovedElement.style.opacity = '0.7';
+        document.body.appendChild(touchMovedElement);
+        
+        // Select the piece
+        selectedPiece = { row: touchStartRow, col: touchStartCol };
+        renderBoard();
+        
+        event.preventDefault();
+    }
+}
+
+function handleTouchMove(event) {
+    if (!touchMovedElement) return;
+    
+    const touch = event.touches[0];
+    
+    // Move the ghost element with touch
+    touchMovedElement.style.left = (touch.clientX - 20) + 'px';
+    touchMovedElement.style.top = (touch.clientY - 20) + 'px';
+    
+    event.preventDefault();
+}
+
+function handleTouchEnd(event) {
+    if (!touchMovedElement || !selectedPiece) {
+        if (touchMovedElement) {
+            document.body.removeChild(touchMovedElement);
+            touchMovedElement = null;
+        }
+        return;
+    }
+    
+    // Find what's under the touch point
+    const touch = event.changedTouches[0];
+    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    // Find the cell that was touched
+    let cell = elementAtPoint;
+    while (cell && !cell.dataset.row) {
+        if (cell === document.body) break;
+        cell = cell.parentElement;
+    }
+    
+    // If we found a cell, try to move there
+    if (cell && cell.dataset.row) {
+        const toRow = parseInt(cell.dataset.row);
+        const toCol = parseInt(cell.dataset.col);
+        
+        if (isValidMove(selectedPiece.row, selectedPiece.col, toRow, toCol)) {
+            // Remove the ghost element before the game board updates
+            document.body.removeChild(touchMovedElement);
+            touchMovedElement = null;
+            
+            moveWhitePiece(selectedPiece.row, selectedPiece.col, toRow, toCol);
+        } else {
+            // Clean up if move was invalid
+            document.body.removeChild(touchMovedElement);
+            touchMovedElement = null;
+            selectedPiece = null;
+            renderBoard();
+        }
+    } else {
+        // Clean up if no cell was found
+        document.body.removeChild(touchMovedElement);
+        touchMovedElement = null;
+        selectedPiece = null;
+        renderBoard();
+    }
+    
+    event.preventDefault();
 }
 
 function moveWhitePiece(fromRow, fromCol, toRow, toCol) {
@@ -376,4 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Initialize the game when the page loads
-window.onload = initializeBoard;
+window.onload = function() {
+    initializeBoard();
+    initTouchEvents();
+};
