@@ -40,12 +40,11 @@ function renderBoard() {
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
+                triangle.textContent = '▲';  // Unicode triangle character
                 
-                // For desktop: drag and drop
-                if (board[row][col] === 'white') {
-                    triangle.draggable = true;
-                    triangle.ondragstart = (e) => dragStart(e, row, col);
-                }
+                // For desktop and mobile: drag and drop
+                triangle.draggable = true;
+                triangle.ondragstart = (e) => dragStart(e, row, col);
                 
                 cell.appendChild(triangle);
             }
