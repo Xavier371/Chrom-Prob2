@@ -52,32 +52,73 @@ h1 {
 #game-board div {
     width: 60px;
     height: 60px;
-    background-color: #fff;
     border: 1px solid #ccc;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
+    background-color: #fff; /* All cells are white by default */
 }
 
-/* Alternating colors for checkerboard */
-#game-board div:nth-child(odd) {
-    background-color: #e0e0e0;
+/* Checkerboard pattern using data attributes */
+#game-board div[data-row="0"][data-col="1"],
+#game-board div[data-row="0"][data-col="3"],
+#game-board div[data-row="0"][data-col="5"],
+#game-board div[data-row="0"][data-col="7"],
+#game-board div[data-row="1"][data-col="0"],
+#game-board div[data-row="1"][data-col="2"],
+#game-board div[data-row="1"][data-col="4"],
+#game-board div[data-row="1"][data-col="6"],
+#game-board div[data-row="2"][data-col="1"],
+#game-board div[data-row="2"][data-col="3"],
+#game-board div[data-row="2"][data-col="5"],
+#game-board div[data-row="2"][data-col="7"],
+#game-board div[data-row="3"][data-col="0"],
+#game-board div[data-row="3"][data-col="2"],
+#game-board div[data-row="3"][data-col="4"],
+#game-board div[data-row="3"][data-col="6"],
+#game-board div[data-row="4"][data-col="1"],
+#game-board div[data-row="4"][data-col="3"],
+#game-board div[data-row="4"][data-col="5"],
+#game-board div[data-row="4"][data-col="7"],
+#game-board div[data-row="5"][data-col="0"],
+#game-board div[data-row="5"][data-col="2"],
+#game-board div[data-row="5"][data-col="4"],
+#game-board div[data-row="5"][data-col="6"],
+#game-board div[data-row="6"][data-col="1"],
+#game-board div[data-row="6"][data-col="3"],
+#game-board div[data-row="6"][data-col="5"],
+#game-board div[data-row="6"][data-col="7"],
+#game-board div[data-row="7"][data-col="0"],
+#game-board div[data-row="7"][data-col="2"],
+#game-board div[data-row="7"][data-col="4"],
+#game-board div[data-row="7"][data-col="6"] {
+    background-color: #000000;
+}
+
+.selected {
+    background-color: rgba(0, 255, 0, 0.3) !important;
 }
 
 .triangle {
-    width: 15px;
-    height: 15px;
-    background-size: cover;
+    width: 0;
+    height: 0;
     cursor: pointer;
+    position: relative;
 }
 
 .triangle.white {
-    background-image: url('white.png');
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 40px solid white;
+    filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
 }
 
 .triangle.black {
-    background-image: url('black.png');
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 40px solid black;
+    filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
 }
 
 /* Mobile styles */
@@ -97,8 +138,17 @@ h1 {
         height: 40px;
     }
     
-    .triangle {
-        width: 12px;
-        height: 12px;
+    .triangle.white, .triangle.black {
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-bottom: 30px solid;
+    }
+    
+    .triangle.white {
+        border-bottom-color: white;
+    }
+    
+    .triangle.black {
+        border-bottom-color: black;
     }
 }
