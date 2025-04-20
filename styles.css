@@ -101,25 +101,21 @@ h1 {
 }
 
 .triangle {
-    width: 0;
-    height: 0;
+    font-size: 36px;
     cursor: pointer;
-    position: relative;
+    user-select: none;
     z-index: 1;
+    line-height: 1;
 }
 
 .triangle.white {
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 40px solid white;
-    filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
 }
 
 .triangle.black {
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 40px solid black;
-    filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.5));
+    color: black;
+    text-shadow: 1px 1px 3px rgba(255,255,255,0.7);
 }
 
 /* Mobile styles */
@@ -139,17 +135,7 @@ h1 {
         height: 40px;
     }
     
-    .triangle.white, .triangle.black {
-        border-left: 15px solid transparent;
-        border-right: 15px solid transparent;
-        border-bottom: 30px solid;
-    }
-    
-    .triangle.white {
-        border-bottom-color: white;
-    }
-    
-    .triangle.black {
-        border-bottom-color: black;
+    .triangle {
+        font-size: 26px;
     }
 }
