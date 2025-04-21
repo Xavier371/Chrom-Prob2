@@ -40,30 +40,55 @@ function renderBoard() {
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
-                triangle.textContent = '▲';  // Unicode triangle character
                 
-                // For desktop and mobile: drag and drop
-                triangle.draggable = true;
-                triangle.ondragstart = (e) => dragStart(e, row, col);
+                // For white pieces only (player's pieces)
+                if (board[row][col] === 'white' && currentPlayer === 'white') {
+                    // Make draggable for both desktop and mobile
+                    triangle.draggable = true;
+                    triangle.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
+                        selectedPiece = { row, col };
+                        setTimeout(() => renderBoard(), 0); // Needed for Firefox
+                    });
+                    
+                    // Add click event for selection
+                    triangle.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent cell click
+                        cellClick(row, col);
+                    });
+                }
                 
                 cell.appendChild(triangle);
             }
             
-            // Add click handler for mobile and desktop
+            // Add click handler for cells
             cell.addEventListener('click', () => cellClick(row, col));
             
-            // Add drop handler for desktop
-            cell.ondragover = (e) => e.preventDefault();
-            cell.ondrop = (e) => drop(e, row, col);
+            // Add drop handler 
+            cell.addEventListener('dragover', (e) => e.preventDefault());
+            cell.addEventListener('drop', (e) => {
+                e.preventDefault();
+                
+                try {
+                    const { row: fromRow, col: fromCol } = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    const toRow = parseInt(cell.dataset.row);
+                    const toCol = parseInt(cell.dataset.col);
+                    
+                    if (isValidMove(fromRow, fromCol, toRow, toCol)) {
+                        moveWhitePiece(fromRow, fromCol, toRow, toCol);
+                    } else {
+                        // Reset selection if move is invalid
+                        selectedPiece = null;
+                        renderBoard();
+                    }
+                } catch (error) {
+                    console.error("Error in drop handler:", error);
+                }
+            });
             
             gameBoard.appendChild(cell);
         }
     }
-}
-
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-           (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
 }
 
 function cellClick(row, col) {
@@ -91,147 +116,6 @@ function cellClick(row, col) {
             moveWhitePiece(selectedPiece.row, selectedPiece.col, row, col);
         }
     }
-}
-
-function dragStart(event, row, col) {
-    if (currentPlayer === 'white' && board[row][col] === 'white') {
-        event.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
-        // Visually indicate the dragged piece
-        selectedPiece = { row, col };
-        setTimeout(() => renderBoard(), 0); // Needed for Firefox
-    }
-}
-
-function drop(event, newRow, newCol) {
-    // Only process if it's white's turn
-    if (currentPlayer !== 'white') return;
-    
-    try {
-        const { row, col } = JSON.parse(event.dataTransfer.getData('text/plain'));
-        
-        if (isValidMove(row, col, newRow, newCol)) {
-            moveWhitePiece(row, col, newRow, newCol);
-        }
-    } catch (error) {
-        console.error("Error in drop handler:", error);
-    }
-    
-    // Clear selection
-    selectedPiece = null;
-    renderBoard();
-}
-
-// Mobile touch handling
-let touchStartX = 0;
-let touchStartY = 0;
-let touchStartRow = null;
-let touchStartCol = null;
-let touchMovedElement = null;
-
-function initTouchEvents() {
-    const gameBoard = document.getElementById('game-board');
-    gameBoard.addEventListener('touchstart', handleTouchStart, { passive: false });
-    gameBoard.addEventListener('touchmove', handleTouchMove, { passive: false });
-    gameBoard.addEventListener('touchend', handleTouchEnd, { passive: false });
-}
-
-function handleTouchStart(event) {
-    if (currentPlayer !== 'white') return;
-    
-    const touch = event.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    
-    let target = touch.target;
-    // Find if we're touching a triangle
-    while (target && !target.classList.contains('triangle')) {
-        if (target === document.body) return;
-        target = target.parentElement;
-    }
-    
-    // Only proceed if we touched a white triangle
-    if (target && target.classList.contains('triangle') && target.classList.contains('white')) {
-        // Get cell coordinates
-        const cell = target.parentElement;
-        touchStartRow = parseInt(cell.dataset.row);
-        touchStartCol = parseInt(cell.dataset.col);
-        
-        // Create a clone for dragging
-        touchMovedElement = target.cloneNode(true);
-        touchMovedElement.style.position = 'fixed';
-        touchMovedElement.style.left = (touchStartX - 20) + 'px';
-        touchMovedElement.style.top = (touchStartY - 20) + 'px';
-        touchMovedElement.style.zIndex = '1000';
-        touchMovedElement.style.opacity = '0.7';
-        document.body.appendChild(touchMovedElement);
-        
-        // Select the piece
-        selectedPiece = { row: touchStartRow, col: touchStartCol };
-        renderBoard();
-        
-        event.preventDefault();
-    }
-}
-
-function handleTouchMove(event) {
-    if (!touchMovedElement) return;
-    
-    const touch = event.touches[0];
-    
-    // Move the ghost element with touch
-    touchMovedElement.style.left = (touch.clientX - 20) + 'px';
-    touchMovedElement.style.top = (touch.clientY - 20) + 'px';
-    
-    event.preventDefault();
-}
-
-function handleTouchEnd(event) {
-    if (!touchMovedElement || !selectedPiece) {
-        if (touchMovedElement) {
-            document.body.removeChild(touchMovedElement);
-            touchMovedElement = null;
-        }
-        return;
-    }
-    
-    // Find what's under the touch point
-    const touch = event.changedTouches[0];
-    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    // Find the cell that was touched
-    let cell = elementAtPoint;
-    while (cell && !cell.dataset.row) {
-        if (cell === document.body) break;
-        cell = cell.parentElement;
-    }
-    
-    // If we found a cell, try to move there
-    if (cell && cell.dataset.row) {
-        const toRow = parseInt(cell.dataset.row);
-        const toCol = parseInt(cell.dataset.col);
-        
-        if (isValidMove(selectedPiece.row, selectedPiece.col, toRow, toCol)) {
-            // Remove the ghost element before the game board updates
-            document.body.removeChild(touchMovedElement);
-            touchMovedElement = null;
-            
-            moveWhitePiece(selectedPiece.row, selectedPiece.col, toRow, toCol);
-        } else {
-            // Clean up if move was invalid
-            document.body.removeChild(touchMovedElement);
-            touchMovedElement = null;
-            selectedPiece = null;
-            renderBoard();
-        }
-    } else {
-        // Clean up if no cell was found
-        document.body.removeChild(touchMovedElement);
-        touchMovedElement = null;
-        selectedPiece = null;
-        renderBoard();
-    }
-    
-    event.preventDefault();
 }
 
 function moveWhitePiece(fromRow, fromCol, toRow, toCol) {
@@ -488,7 +372,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Initialize the game when the page loads
-window.onload = function() {
-    initializeBoard();
-    initTouchEvents();
-};
+window.onload = initializeBoard;
