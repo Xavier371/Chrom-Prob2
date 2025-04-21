@@ -3,6 +3,10 @@ let board = [];
 let currentPlayer = 'white';
 let selectedPiece = null;
 let isDragging = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartRow = null;
+let touchStartCol = null;
 
 function initializeBoard() {
     board = Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
@@ -41,11 +45,10 @@ function renderBoard() {
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
-                triangle.textContent = '▲'; // Unicode triangle character
                 
                 // For white pieces only (player's pieces)
                 if (board[row][col] === 'white' && currentPlayer === 'white') {
-                    // Make draggable
+                    // Make draggable for desktop
                     triangle.draggable = true;
                     
                     // Desktop drag events
@@ -53,19 +56,27 @@ function renderBoard() {
                         isDragging = true;
                         e.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
                         selectedPiece = { row, col };
-                        setTimeout(() => {
-                            triangle.style.opacity = '0.5';
-                        }, 0);
                     });
                     
                     triangle.addEventListener('dragend', () => {
                         isDragging = false;
-                        triangle.style.opacity = '1';
                     });
                     
-                    // Mobile and desktop click/tap
-                    triangle.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent cell click
+                    // Touch events for mobile
+                    triangle.addEventListener('touchstart', (e) => {
+                        const touch = e.touches[0];
+                        touchStartX = touch.clientX;
+                        touchStartY = touch.clientY;
+                        touchStartRow = row;
+                        touchStartCol = col;
+                        selectedPiece = { row, col };
+                        renderBoard();
+                        e.preventDefault();
+                    });
+                    
+                    // Click/tap for selection
+                    triangle.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
                         cellClick(row, col);
                     });
                 }
@@ -75,14 +86,18 @@ function renderBoard() {
             
             // Add click handler for cells
             cell.addEventListener('click', () => cellClick(row, col));
+            cell.addEventListener('mouseup', () => {
+                if (selectedPiece && row !== selectedPiece.row && col !== selectedPiece.col) {
+                    if (isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
+                        moveWhitePiece(selectedPiece.row, selectedPiece.col, row, col);
+                    }
+                }
+            });
             
-            // Add drop handler 
+            // Add drop handler for desktop
             cell.addEventListener('dragover', (e) => e.preventDefault());
             cell.addEventListener('drop', (e) => {
                 e.preventDefault();
-                
-                if (!isDragging) return;
-                isDragging = false;
                 
                 try {
                     const { row: fromRow, col: fromCol } = JSON.parse(e.dataTransfer.getData('text/plain'));
@@ -101,6 +116,35 @@ function renderBoard() {
                     selectedPiece = null;
                     renderBoard();
                 }
+            });
+            
+            // Touch events for mobile
+            cell.addEventListener('touchend', (e) => {
+                if (!selectedPiece) return;
+                
+                const touch = e.changedTouches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                // Find the cell that was touched
+                let touchedCell = element;
+                while (touchedCell && !touchedCell.dataset.row) {
+                    if (touchedCell === document.body) break;
+                    touchedCell = touchedCell.parentElement;
+                }
+                
+                if (touchedCell && touchedCell.dataset.row) {
+                    const toRow = parseInt(touchedCell.dataset.row);
+                    const toCol = parseInt(touchedCell.dataset.col);
+                    
+                    if (isValidMove(selectedPiece.row, selectedPiece.col, toRow, toCol)) {
+                        moveWhitePiece(selectedPiece.row, selectedPiece.col, toRow, toCol);
+                    } else {
+                        selectedPiece = null;
+                        renderBoard();
+                    }
+                }
+                
+                e.preventDefault();
             });
             
             gameBoard.appendChild(cell);
@@ -363,10 +407,12 @@ function updateGameStatus() {
     }
 }
 
-// Prevent scrolling on mobile
-function preventScrolling() {
+// Prevent default touch behavior to avoid scrolling
+document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('touchmove', function(e) {
-        e.preventDefault();
+        if (e.target.closest('#game-board')) {
+            e.preventDefault();
+        }
     }, { passive: false });
     
     document.addEventListener('touchstart', function(e) {
@@ -374,10 +420,8 @@ function preventScrolling() {
             e.preventDefault();
         }
     }, { passive: false });
-}
-
-// Add restart button functionality
-document.addEventListener('DOMContentLoaded', function() {
+    
+    // Add restart button functionality
     const restartBtn = document.getElementById('restart-btn');
     if (restartBtn) {
         restartBtn.addEventListener('click', initializeBoard);
@@ -399,9 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Prevent scrolling on mobile
-    preventScrolling();
 });
 
 // Initialize the game when the page loads
