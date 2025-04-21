@@ -2,6 +2,7 @@ const boardSize = 8;
 let board = [];
 let currentPlayer = 'white';
 let selectedPiece = null;
+let isDragging = false;
 
 function initializeBoard() {
     board = Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
@@ -40,18 +41,29 @@ function renderBoard() {
             if (board[row][col]) {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
+                triangle.textContent = '▲'; // Unicode triangle character
                 
                 // For white pieces only (player's pieces)
                 if (board[row][col] === 'white' && currentPlayer === 'white') {
-                    // Make draggable for both desktop and mobile
+                    // Make draggable
                     triangle.draggable = true;
+                    
+                    // Desktop drag events
                     triangle.addEventListener('dragstart', (e) => {
+                        isDragging = true;
                         e.dataTransfer.setData('text/plain', JSON.stringify({ row, col }));
                         selectedPiece = { row, col };
-                        setTimeout(() => renderBoard(), 0); // Needed for Firefox
+                        setTimeout(() => {
+                            triangle.style.opacity = '0.5';
+                        }, 0);
                     });
                     
-                    // Add click event for selection
+                    triangle.addEventListener('dragend', () => {
+                        isDragging = false;
+                        triangle.style.opacity = '1';
+                    });
+                    
+                    // Mobile and desktop click/tap
                     triangle.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent cell click
                         cellClick(row, col);
@@ -69,6 +81,9 @@ function renderBoard() {
             cell.addEventListener('drop', (e) => {
                 e.preventDefault();
                 
+                if (!isDragging) return;
+                isDragging = false;
+                
                 try {
                     const { row: fromRow, col: fromCol } = JSON.parse(e.dataTransfer.getData('text/plain'));
                     const toRow = parseInt(cell.dataset.row);
@@ -83,6 +98,8 @@ function renderBoard() {
                     }
                 } catch (error) {
                     console.error("Error in drop handler:", error);
+                    selectedPiece = null;
+                    renderBoard();
                 }
             });
             
@@ -346,6 +363,19 @@ function updateGameStatus() {
     }
 }
 
+// Prevent scrolling on mobile
+function preventScrolling() {
+    document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+    }, { passive: false });
+    
+    document.addEventListener('touchstart', function(e) {
+        if (e.target.closest('#game-board')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
+
 // Add restart button functionality
 document.addEventListener('DOMContentLoaded', function() {
     const restartBtn = document.getElementById('restart-btn');
@@ -369,7 +399,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Prevent scrolling on mobile
+    preventScrolling();
 });
 
 // Initialize the game when the page loads
-window.onload = initializeBoard;
+window.onload = function() {
+    initializeBoard();
+};
