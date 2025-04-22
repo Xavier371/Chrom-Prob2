@@ -49,7 +49,7 @@ function renderBoard() {
                 const triangle = document.createElement('div');
                 triangle.className = 'triangle ' + board[row][col];
                 
-                // Make player's pieces draggable
+                // Make player's pieces interactive
                 if ((board[row][col] === 'white' && currentPlayer === 'white') || 
                     (gameMode === '2p' && board[row][col] === 'black' && currentPlayer === 'black')) {
                     
@@ -75,9 +75,67 @@ function renderBoard() {
                         touchStartRow = row;
                         touchStartCol = col;
                         selectedPiece = { row, col };
-                        renderBoard();
                         e.preventDefault();
-                    });
+                    }, { passive: false });
+                    
+                    triangle.addEventListener('touchmove', (e) => {
+                        if (selectedPiece) {
+                            e.preventDefault();
+                        }
+                    }, { passive: false });
+                    
+                    triangle.addEventListener('touchend', (e) => {
+                        if (!selectedPiece) return;
+                        
+                        const touch = e.changedTouches[0];
+                        const endX = touch.clientX;
+                        const endY = touch.clientY;
+                        const dx = endX - touchStartX;
+                        const dy = endY - touchStartY;
+                        
+                        // Just detect general direction with a small threshold
+                        const SWIPE_THRESHOLD = 5;
+                        
+                        let newRow = touchStartRow;
+                        let newCol = touchStartCol;
+                        
+                        // Determine which direction had the largest movement
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            // Horizontal movement dominates
+                            if (dx > SWIPE_THRESHOLD) {
+                                // Right swipe
+                                newCol += 1;
+                            } else if (dx < -SWIPE_THRESHOLD) {
+                                // Left swipe
+                                newCol -= 1;
+                            }
+                        } else {
+                            // Vertical movement dominates
+                            if (dy > SWIPE_THRESHOLD) {
+                                // Down swipe
+                                newRow += 1;
+                            } else if (dy < -SWIPE_THRESHOLD) {
+                                // Up swipe
+                                newRow -= 1;
+                            }
+                        }
+                        
+                        // Try to make the move if valid
+                        if (newRow !== touchStartRow || newCol !== touchStartCol) {
+                            if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize && 
+                                isValidMove(touchStartRow, touchStartCol, newRow, newCol)) {
+                                movePiece(touchStartRow, touchStartCol, newRow, newCol);
+                            } else {
+                                selectedPiece = null;
+                                renderBoard();
+                            }
+                        } else {
+                            // Tiny movement might be a tap/click intent
+                            cellClick(touchStartRow, touchStartCol);
+                        }
+                        
+                        e.preventDefault();
+                    }, { passive: false });
                     
                     // Click/tap for selection
                     triangle.addEventListener('mousedown', (e) => {
@@ -123,35 +181,6 @@ function renderBoard() {
                 }
             });
             
-            // Touch events for mobile
-            cell.addEventListener('touchend', (e) => {
-                if (!selectedPiece) return;
-                
-                const touch = e.changedTouches[0];
-                const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                
-                // Find the cell that was touched
-                let touchedCell = element;
-                while (touchedCell && !touchedCell.dataset.row) {
-                    if (touchedCell === document.body) break;
-                    touchedCell = touchedCell.parentElement;
-                }
-                
-                if (touchedCell && touchedCell.dataset.row) {
-                    const toRow = parseInt(touchedCell.dataset.row);
-                    const toCol = parseInt(touchedCell.dataset.col);
-                    
-                    if (isValidMove(selectedPiece.row, selectedPiece.col, toRow, toCol)) {
-                        movePiece(selectedPiece.row, selectedPiece.col, toRow, toCol);
-                    } else {
-                        selectedPiece = null;
-                        renderBoard();
-                    }
-                }
-                
-                e.preventDefault();
-            });
-            
             gameBoard.appendChild(cell);
         }
     }
@@ -189,6 +218,7 @@ function cellClick(row, col) {
 
 function movePiece(fromRow, fromCol, toRow, toCol) {
     const movingPiece = board[fromRow][fromCol];
+    const capturedPiece = board[toRow][toCol];
     
     // Move the piece
     board[toRow][toCol] = movingPiece;
@@ -200,6 +230,8 @@ function movePiece(fromRow, fromCol, toRow, toCol) {
     }
     
     // Check win conditions
+    
+    // Win by reaching the opposite end
     if (movingPiece === 'white' && toRow === 0) {
         renderBoard();
         setTimeout(() => {
@@ -216,6 +248,29 @@ function movePiece(fromRow, fromCol, toRow, toCol) {
         return;
     }
     
+    // Win by capturing all opponent's pieces
+    if (capturedPiece) {
+        // Check if all pieces of a color have been captured
+        const remainingWhite = countPieces('white');
+        const remainingBlack = countPieces('black');
+        
+        if (remainingWhite === 0) {
+            renderBoard();
+            setTimeout(() => {
+                alert('Black wins by capturing all white pieces!');
+                initializeBoard();
+            }, 100);
+            return;
+        } else if (remainingBlack === 0) {
+            renderBoard();
+            setTimeout(() => {
+                alert('White wins by capturing all black pieces!');
+                initializeBoard();
+            }, 100);
+            return;
+        }
+    }
+    
     // Switch turns
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     selectedPiece = null;
@@ -226,6 +281,19 @@ function movePiece(fromRow, fromCol, toRow, toCol) {
     if (gameMode === '1p' && currentPlayer === 'black') {
         setTimeout(makeBlackMove, 500);
     }
+}
+
+// Helper function to count pieces of a given color
+function countPieces(color) {
+    let count = 0;
+    for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+            if (board[row][col] === color) {
+                count++;
+            }
+        }
+    }
+    return count;
 }
 
 function isValidMove(row, col, newRow, newCol) {
@@ -275,11 +343,22 @@ function makeBlackMove() {
                         // Update last moved piece
                         lastMovedBlackPiece = { row: newRow, col: newCol };
                         
-                        // Check if black won
+                        // Check if black won by reaching the end
                         if (newRow === boardSize - 1) {
                             renderBoard();
                             setTimeout(() => {
                                 alert('Black wins!');
+                                initializeBoard();
+                            }, 100);
+                            return;
+                        }
+                        
+                        // Check if black won by capturing all white pieces
+                        const remainingWhite = countPieces('white');
+                        if (remainingWhite === 0) {
+                            renderBoard();
+                            setTimeout(() => {
+                                alert('Black wins by capturing all white pieces!');
                                 initializeBoard();
                             }, 100);
                             return;
@@ -308,7 +387,7 @@ function makeBlackMove() {
             // Update last moved piece
             lastMovedBlackPiece = { row: blockingMove.toRow, col: blockingMove.toCol };
             
-            // Check if black won
+            // Check if black won by reaching the end
             if (blockingMove.toRow === boardSize - 1) {
                 renderBoard();
                 setTimeout(() => {
@@ -477,6 +556,7 @@ function makeBlackMove() {
     renderBoard();
     updateGameStatus();
 }
+
 // Helper function: Check if a position is adjacent to a white piece
 function isAdjacentToWhite(row, col) {
     const directions = [
@@ -614,14 +694,8 @@ function toggleGameMode() {
 
 // Prevent default touch behavior to avoid scrolling
 document.addEventListener('DOMContentLoaded', function() {
-    // Prevent scrolling on touch devices
+    // Prevent scrolling on touch devices when interacting with the game board
     document.addEventListener('touchmove', function(e) {
-        if (e.target.closest('#game-board')) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-    
-    document.addEventListener('touchstart', function(e) {
         if (e.target.closest('#game-board')) {
             e.preventDefault();
         }
